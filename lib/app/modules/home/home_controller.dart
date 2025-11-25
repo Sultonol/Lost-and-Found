@@ -1,76 +1,65 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lost_and_found/app/data/models/report_model.dart';
+import 'package:lost_and_found/app/data/providers/api_provider.dart';
 
-class HomeController extends GetxController {
-  // Gunakan RxList agar UI otomatis update saat data berubah
+class HomeController extends GetxController with GetTickerProviderStateMixin {
+  final ApiProvider apiProvider = Get.find<ApiProvider>();
+
+  var isLoading = true.obs;
+  var selectedTabIndex = 0.obs;
+
   final RxList<Report> lostItems = <Report>[].obs;
   final RxList<Report> foundItems = <Report>[].obs;
+
+  final Rxn<TabController> _tabController = Rxn<TabController>();
+  TabController? get tabController => _tabController.value;
 
   @override
   void onInit() {
     super.onInit();
+    _tabController.value = TabController(length: 2, vsync: this);
+    _tabController.value!.addListener(() {
+      selectedTabIndex.value = _tabController.value!.index;
+    });
     fetchReports();
   }
 
-  void fetchReports() {
-    // TODO: Ganti ini dengan API call asli
+  @override
+  void onClose() {
+    _tabController.value?.dispose();
+    super.onClose();
+  }
 
-    // Data dummy
-    var dummyLostItems = [
-      Report(
-        id: '1',
-        itemName: 'Kunci Motor Honda',
-        description: 'Kunci motor dengan gantungan menara eiffel',
-        location: 'Perpustakaan Lt. 2',
-        category: 'Kunci',
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        imageUrl: 'https://placehold.co/400x400/png?text=Kunci',
-        reportType: 'hilang',
-        status: 'open',
-        userId: 'user-abc',
-      ),
-      Report(
-        id: '2',
-        itemName: 'Tumbler Corkcicle',
-        description: 'Warna hitam, ada stiker "Flutter"',
-        location: 'Kantin Gedung C',
-        category: 'Botol Minum',
-        date: DateTime.now().subtract(const Duration(hours: 5)),
-        imageUrl: 'https://placehold.co/400x400/png?text=Tumbler',
-        reportType: 'hilang',
-        status: 'open',
-        userId: 'user-def',
-      ),
-      Report(
-        id: '4',
-        itemName: 'Laptop Axio',
-        description: 'Laptop berwarna hitam lengkap dengan charger',
-        location: 'Cafe Sruput Hey Hey',
-        category: 'Elektronik',
-        date: DateTime.now().subtract(const Duration(hours: 4)),
-        imageUrl: 'https://id.pinterest.com/pin/179299628909993943/',
-        reportType: 'hilang',
-        status: 'open',
-        userId: 'user-ghi',
-      ),
-    ];
+  Future<void> fetchReports() async {
+    try {
+      isLoading(true);
 
-    var dummyFoundItems = [
-      Report(
-        id: '3',
-        itemName: 'Dompet Coklat',
-        description: 'Ditemukan dompet coklat, berisi KTP a.n Budi',
-        location: 'Masjid Kampus',
-        category: 'Dompet',
-        date: DateTime.now().subtract(const Duration(minutes: 30)),
-        imageUrl: 'https://placehold.co/400x400/png?text=Dompet',
-        reportType: 'ditemukan',
-        status: 'open',
-        userId: 'user-xyz',
-      ),
-    ];
+      final responses = await Future.wait([
+        apiProvider.getReports(reportType: 'hilang'),
+        apiProvider.getReports(reportType: 'ditemukan'),
+      ]);
 
-    lostItems.assignAll(dummyLostItems);
-    foundItems.assignAll(dummyFoundItems);
+      lostItems.assignAll(responses[0]);
+      foundItems.assignAll(responses[1]);
+    } catch (e) {
+      print("[v0] Error fetching reports: ${e.toString()}");
+      Get.snackbar(
+        "Error",
+        "Gagal mengambil data dari server: ${e.toString()}",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading(false);
+    }
+  }
+
+  Future<void> refreshAndSetTab(String reportType) async {
+    await fetchReports();
+    // Set tab berdasarkan reportType (hilang = 0, ditemukan = 1)
+    int tabIndex = reportType == 'hilang' ? 0 : 1;
+    if (_tabController.value != null) {
+      _tabController.value!.animateTo(tabIndex);
+    }
   }
 }

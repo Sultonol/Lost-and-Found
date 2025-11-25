@@ -47,18 +47,41 @@ class LoginView extends GetView<LoginController> {
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: controller.passwordC,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: "Password",
-                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                Obx(
+                  () => TextFormField(
+                    controller: controller.passwordC,
+                    obscureText: controller.isPasswordHidden.value,
+                    decoration: InputDecoration(
+                      hintText: "Password",
+                      prefixIcon: const Icon(Icons.lock_outline_rounded),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          controller.isPasswordHidden.value
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () => controller.isPasswordHidden.toggle(),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () => controller.login(),
-                  child: const Text("Login"),
+                Obx(
+                  () => ElevatedButton(
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : () => controller.login(),
+                    child: controller.isLoading.value
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text("Login"),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -66,7 +89,7 @@ class LoginView extends GetView<LoginController> {
                   children: [
                     const Text("Belum punya akun?"),
                     TextButton(
-                      onPressed: () => Get.toNamed(Routes.REGISTER),
+                      onPressed: () => Get.offNamed(Routes.REGISTER),
                       child: const Text("Daftar di sini"),
                     ),
                   ],

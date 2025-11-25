@@ -8,18 +8,32 @@ class HilangTabView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    // Gunakan Obx untuk mendengarkan perubahan pada lostItems
     return Obx(() {
-      if (controller.lostItems.isEmpty) {
-        return const Center(child: Text("Belum ada laporan barang hilang."));
+      if (controller.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
       }
-      return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: controller.lostItems.length,
-        itemBuilder: (context, index) {
-          final report = controller.lostItems[index];
-          return ReportItemCard(report: report);
-        },
+
+      return RefreshIndicator(
+        onRefresh: () => controller.fetchReports(),
+        child: controller.lostItems.isEmpty
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    alignment: Alignment.center,
+                    child: const Text("Belum ada laporan barang hilang."),
+                  ),
+                ],
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: controller.lostItems.length,
+                itemBuilder: (context, index) {
+                  final report = controller.lostItems[index];
+                  return ReportItemCard(report: report);
+                },
+              ),
       );
     });
   }

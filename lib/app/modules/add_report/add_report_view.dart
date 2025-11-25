@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lost_and_found/app/modules/add_report/add_report_controller.dart';
-import 'package:lost_and_found/app/theme/app_theme.dart';
 
 class AddReportView extends GetView<AddReportController> {
   const AddReportView({super.key});
@@ -9,7 +8,7 @@ class AddReportView extends GetView<AddReportController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Buat Laporan Baru')),
+      appBar: AppBar(title: const Text('Laporan')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -57,26 +56,34 @@ class AddReportView extends GetView<AddReportController> {
               ),
               const SizedBox(height: 16),
 
-              // 3. Kategori
-              // TODO: Anda bisa buat ini dinamis
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Kategori',
-                  prefixIcon: Icon(Icons.bookmark_border_rounded),
-                ),
-                items:
-                    ['Kunci', 'Dompet', 'Botol Minum', 'Elektronik', 'Lainnya']
-                        .map(
-                          (cat) =>
-                              DropdownMenuItem(value: cat, child: Text(cat)),
-                        )
-                        .toList(),
-                onChanged: (value) {
-                  controller.category.value = value ?? 'Lainnya';
-                },
-                validator: (value) =>
-                    value == null ? "Kategori harus dipilih" : null,
-              ),
+              // 3. Kategori (DINAMIS DARI API)
+              Obx(() {
+                if (controller.categories.isEmpty &&
+                    controller.isLoading.value) {
+                  return const Center(child: Text("Mengambil kategori..."));
+                }
+                return DropdownButtonFormField<int>(
+                  value: controller.selectedCategoryId.value,
+                  hint: const Text("Pilih Kategori"),
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori',
+                    prefixIcon: Icon(Icons.bookmark_border_rounded),
+                  ),
+                  items: controller.categories
+                      .map(
+                        (cat) => DropdownMenuItem(
+                          value: cat.id,
+                          child: Text(cat.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    controller.selectedCategoryId.value = value;
+                  },
+                  validator: (value) =>
+                      value == null ? "Kategori harus dipilih" : null,
+                );
+              }),
               const SizedBox(height: 16),
 
               // 4. Lokasi
@@ -156,10 +163,40 @@ class AddReportView extends GetView<AddReportController> {
               ),
               const SizedBox(height: 32),
 
-              // 8. Tombol Submit
-              ElevatedButton(
-                onPressed: () => controller.submitReport(),
-                child: const Text("Submit Laporan"),
+              // 8. Tombol Submit (Dengan Loading)
+              Obx(
+                () => ElevatedButton(
+                  onPressed: controller.isLoading.value
+                      ? null // Nonaktifkan tombol saat loading
+                      : () => controller.submitReport(),
+                  child: controller.isLoading.value
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text("Submit Laporan"),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+              Obx(
+                () => controller.isEditMode.value
+                    ? ElevatedButton.icon(
+                        onPressed: controller.isLoading.value
+                            ? null
+                            : () => controller.deleteReport(),
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text("Hapus Laporan"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
             ],
           ),

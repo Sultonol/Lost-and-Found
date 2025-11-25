@@ -9,16 +9,31 @@ class DitemukanTabView extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (controller.foundItems.isEmpty) {
-        return const Center(child: Text("Belum ada laporan barang ditemukan."));
+      if (controller.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
       }
-      return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: controller.foundItems.length,
-        itemBuilder: (context, index) {
-          final report = controller.foundItems[index];
-          return ReportItemCard(report: report);
-        },
+
+      return RefreshIndicator(
+        onRefresh: () => controller.fetchReports(),
+        child: controller.foundItems.isEmpty
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    alignment: Alignment.center,
+                    child: const Text("Belum ada laporan barang ditemukan."),
+                  ),
+                ],
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: controller.foundItems.length,
+                itemBuilder: (context, index) {
+                  final report = controller.foundItems[index];
+                  return ReportItemCard(report: report);
+                },
+              ),
       );
     });
   }

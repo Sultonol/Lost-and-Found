@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lost_and_found/app/modules/my_claims/my_claims_controller.dart';
 import 'package:lost_and_found/app/routes/app_pages.dart';
-import 'package:lost_and_found/app/theme/app_theme.dart';
 
 class MyClaimsView extends GetView<MyClaimsController> {
   const MyClaimsView({super.key});

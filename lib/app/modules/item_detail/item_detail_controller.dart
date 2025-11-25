@@ -1,36 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:lost_and_found/app/data/models/report_model.dart';
+import 'package:lost_and_found/app/data/models/user_model.dart';
+import 'package:lost_and_found/app/data/providers/api_provider.dart';
+import 'package:lost_and_found/app/modules/home/home_controller.dart';
+import 'package:lost_and_found/app/modules/my_reports/my_reports_controller.dart';
 import 'package:lost_and_found/app/theme/app_theme.dart';
 import 'package:lost_and_found/app/routes/app_pages.dart';
 
 class ItemDetailController extends GetxController {
-  // Ambil data laporan dari argumen halaman
-  final Rx<Report> report = (Get.arguments as Report).obs;
+  final ApiProvider apiProvider = Get.find<ApiProvider>();
+  final GetStorage storage = GetStorage();
 
-  // Mock ID pengguna yang sedang login
-  // TODO: Ganti ini dengan ID pengguna asli dari GetStorage/Auth Service
-  final String myUserId = "user-abc";
+  final Rx<Report> report = (Get.arguments as Report).obs;
+  final RxInt myUserId = 0.obs;
+
+  var isClaiming = false.obs;
+  var isDeleting = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    print("Membuka detail untuk item ID: ${report.value.id}");
-    print("User ID Laporan: ${report.value.userId}");
-    print("My User ID: $myUserId");
+    loadMyUserId();
   }
 
-  // Logika untuk menampilkan tombol aksi
+  void loadMyUserId() {
+    final userData = storage.read('user');
+    if (userData != null) {
+      final myUser = User.fromJson(userData as Map<String, dynamic>);
+      myUserId.value = myUser.id;
+    }
+  }
+
   Widget buildActionButton() {
-    // Kondisi A: Ini Laporan Saya
-    if (report.value.userId == myUserId) {
+    if (myUserId.value == 0) return const SizedBox.shrink();
+
+    if (report.value.userId == myUserId.value) {
       return Row(
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () {
-                /* TODO: Logika Edit */
-              },
+              onPressed: onEditPressed,
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppTheme.primaryColor,
                 side: const BorderSide(color: AppTheme.primaryColor),
@@ -42,66 +53,111 @@ class ItemDetailController extends GetxController {
           const SizedBox(width: 16),
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                /* TODO: Logika Hapus */
-              },
+              onPressed: isDeleting.value ? null : onDeletePressed,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text("Hapus"),
+              child: isDeleting.value
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text("Hapus"),
             ),
           ),
         ],
       );
     }
 
-    // Kondisi C: Laporan "Ditemukan" Milik Org Lain
-    // (dan statusnya masih 'open')
     if (report.value.reportType == 'ditemukan' &&
         report.value.status == 'open') {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () => createClaim(),
-          child: const Text("KLAIM BARANG INI"),
+          onPressed: isClaiming.value ? null : createClaim,
+          child: isClaiming.value
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text("KLAIM BARANG INI"),
         ),
       );
     }
-
-    // Kondisi B (Laporan "Hilang") atau lainnya: Tidak ada tombol
     return const SizedBox.shrink();
   }
 
+  void onEditPressed() {
+    Get.toNamed(Routes.ADD_REPORT, arguments: report.value);
+  }
+
+  void onDeletePressed() {
+    Get.defaultDialog(
+      title: "Konfirmasi Hapus",
+      middleText: "Anda yakin ingin menghapus laporan ini?",
+      textConfirm: "Ya, Hapus",
+      textCancel: "Batal",
+      confirmTextColor: Colors.white,
+      buttonColor: Colors.red,
+      onConfirm: () async {
+        // 1. TUTUP DIALOG KONFIRMASI DULUAN
+        Get.back();
+
+        // 2. Mulai Loading di tombol
+        isDeleting(false);
+
+        // 3. Panggil API
+        bool success = await apiProvider.deleteReport(report.value.id);
+
+        // 4. Matikan Loading
+        isDeleting(false);
+
+        if (success) {
+          // 5. JIKA SUKSES -> Langsung Tutup Halaman Detail
+          // Kita gunakan Navigator.pop untuk lebih aman menutup halaman
+          // daripada Get.back() yang kadang menutup snackbar
+          Get.back();
+
+          // 6. Refresh data di background
+          _refreshDataInBackground();
+        }
+      },
+    );
+  }
+
   void createClaim() {
-    // TODO: Tampilkan dialog konfirmasi
     Get.defaultDialog(
       title: "Konfirmasi Klaim",
-      middleText: "Anda yakin ingin mengklaim barang ini?",
+      middleText: "Yakin ingin mengklaim barang ini?",
       textConfirm: "Ya, Klaim",
       textCancel: "Batal",
       confirmTextColor: Colors.white,
-      onConfirm: () {
-        // TODO: Panggil API untuk membuat klaim
-        print("Membuat klaim untuk item ID: ${report.value.id}");
-
-        // Tutup dialog
+      onConfirm: () async {
         Get.back();
+        isClaiming(true);
+        bool success = await apiProvider.createClaim(report.value.id);
+        isClaiming(false);
 
-        // Tampilkan pesan sukses
-        Get.snackbar(
-          "Berhasil",
-          "Klaim berhasil dibuat. Anda dapat melihat progresnya di halaman Profil.",
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
-
-        // Arahkan ke halaman MyClaims
-        Get.toNamed(Routes.MY_CLAIMS);
-
-        // Update status item secara lokal (atau fetch ulang)
-        // Ini akan membuat tombol "KLAIM" hilang
-        report.update((val) {
-          // val.status = 'claimed'; // Seharusnya ini didapat dari API
-        });
+        if (success) {
+          Get.offNamed(Routes.MY_CLAIMS);
+          _refreshDataInBackground();
+        }
       },
     );
+  }
+
+  void _refreshDataInBackground() {
+    try {
+      if (Get.isRegistered<HomeController>())
+        Get.find<HomeController>().fetchReports();
+      if (Get.isRegistered<MyReportsController>())
+        Get.find<MyReportsController>().fetchMyReports();
+    } catch (_) {}
   }
 }

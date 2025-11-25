@@ -10,9 +10,13 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
+    return Obx(() {
+      // Jika controller belum ready, tampilkan loading
+      if (!controller.isLoading.value && controller.tabController == null) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
+
+      return Scaffold(
         appBar: AppBar(
           title: const Text('Lost & Found'),
           actions: [
@@ -21,19 +25,27 @@ class HomeView extends GetView<HomeController> {
               onPressed: () => Get.toNamed(Routes.PROFILE),
             ),
           ],
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Barang Hilang'),
-              Tab(text: 'Barang Ditemukan'),
-            ],
-          ),
+          bottom: controller.tabController != null
+              ? TabBar(
+                  controller: controller.tabController,
+                  tabs: const [
+                    Tab(text: 'Barang Hilang'),
+                    Tab(text: 'Barang Ditemukan'),
+                  ],
+                )
+              : null,
         ),
-        body: const TabBarView(children: [HilangTabView(), DitemukanTabView()]),
+        body: controller.tabController != null
+            ? TabBarView(
+                controller: controller.tabController,
+                children: const [HilangTabView(), DitemukanTabView()],
+              )
+            : const Center(child: CircularProgressIndicator()),
         floatingActionButton: FloatingActionButton(
           onPressed: () => Get.toNamed(Routes.ADD_REPORT),
           child: const Icon(Icons.add_rounded),
         ),
-      ),
-    );
+      );
+    });
   }
 }

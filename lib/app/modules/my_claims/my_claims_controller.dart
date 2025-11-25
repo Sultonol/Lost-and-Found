@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:lost_and_found/app/theme/app_theme.dart';
 import 'package:lost_and_found/app/data/models/claim_model.dart';
 
 class MyClaimsController extends GetxController {

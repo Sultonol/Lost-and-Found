@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lost_and_found/app/modules/auth/register/register_controller.dart';
+import 'package:lost_and_found/app/routes/app_pages.dart';
 
 class RegisterView extends GetView<RegisterController> {
   const RegisterView({super.key});
@@ -52,27 +53,61 @@ class RegisterView extends GetView<RegisterController> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: controller.passwordC,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  hintText: "Password",
-                  prefixIcon: Icon(Icons.lock_outline_rounded),
+              Obx(
+                () => TextFormField(
+                  controller: controller.passwordC,
+                  obscureText: controller.isPasswordHidden.value,
+                  decoration: InputDecoration(
+                    hintText: "Password",
+                    prefixIcon: const Icon(Icons.lock_outline_rounded),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        controller.isPasswordHidden.value
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () => controller.isPasswordHidden.toggle(),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: controller.confirmPasswordC,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  hintText: "Konfirmasi Password",
-                  prefixIcon: Icon(Icons.lock_reset_rounded),
+              Obx(
+                () => TextFormField(
+                  controller: controller.confirmPasswordC,
+                  obscureText: controller.isConfirmPasswordHidden.value,
+                  decoration: InputDecoration(
+                    hintText: "Konfirmasi Password",
+                    prefixIcon: const Icon(Icons.lock_reset_rounded),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        controller.isConfirmPasswordHidden.value
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          controller.isConfirmPasswordHidden.toggle(),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () => controller.register(),
-                child: const Text("Daftar"),
+              Obx(
+                () => ElevatedButton(
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : () => controller.register(),
+                  child: controller.isLoading.value
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text("Daftar"),
+                ),
               ),
               const SizedBox(height: 24),
               Row(
@@ -80,7 +115,7 @@ class RegisterView extends GetView<RegisterController> {
                 children: [
                   const Text("Sudah punya akun?"),
                   TextButton(
-                    onPressed: () => Get.back(), // Kembali ke halaman login
+                    onPressed: () => Get.offNamed(Routes.LOGIN),
                     child: const Text("Login"),
                   ),
                 ],
