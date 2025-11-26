@@ -9,6 +9,26 @@ class ReportItemCard extends StatelessWidget {
   final Report report;
   const ReportItemCard({super.key, required this.report});
 
+  // Helper untuk warna status
+  Color _getStatusColor(String status) {
+    if (status == 'claimed' || status == 'resolved') {
+      return Colors.green;
+    } else if (status == 'pending') {
+      return Colors.orange;
+    }
+    return Colors.blue; // open
+  }
+
+  // Helper untuk teks status
+  String _getStatusText(String status) {
+    if (status == 'claimed' || status == 'resolved') {
+      return "Sudah Diklaim";
+    } else if (status == 'pending') {
+      return "Menunggu Konfirmasi";
+    }
+    return "Tersedia";
+  }
+
   Widget _buildImagePlaceholder() {
     return Container(
       height: 180,
@@ -29,15 +49,15 @@ class ReportItemCard extends StatelessWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          InkWell(
-            onTap: () {
-              Get.toNamed(Routes.ITEM_DETAIL, arguments: report);
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: InkWell(
+        onTap: () {
+          Get.toNamed(Routes.ITEM_DETAIL, arguments: report);
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- BAGIAN GAMBAR & STATUS ---
+            Stack(
               children: [
                 (report.imageUrl != null && report.imageUrl!.isNotEmpty)
                     ? CachedNetworkImage(
@@ -56,88 +76,88 @@ class ReportItemCard extends StatelessWidget {
                             _buildImagePlaceholder(),
                       )
                     : _buildImagePlaceholder(),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        report.itemName,
-                        style: Get.textTheme.titleMedium,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+
+                // --- BADGE STATUS (BARU) ---
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(report.status).withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _getStatusText(report.status),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              report.category?.name ?? report.location,
-                              style: Get.textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            DateFormat('d MMMM yyyy').format(report.date),
-                            style: Get.textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: () {
-                    Get.toNamed(Routes.ADD_REPORT, arguments: report);
-                  },
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Edit'),
-                ),
-                const SizedBox(width: 8),
-                TextButton.icon(
-                  onPressed: () {
-                    // Kirim report ke controller untuk delete
-                    Get.toNamed(Routes.ADD_REPORT, arguments: report);
-                    // Atau bisa juga langsung buka dialog delete di sini
-                  },
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Hapus'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                ),
-              ],
+
+            // --- BAGIAN INFO ---
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    report.itemName,
+                    style: Get.textTheme.titleMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          report.category?.name ?? report.location,
+                          style: Get.textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        DateFormat('d MMMM yyyy').format(report.date),
+                        style: Get.textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

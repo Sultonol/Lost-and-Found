@@ -8,7 +8,6 @@ import 'package:lost_and_found/app/theme/app_theme.dart';
 class ItemDetailView extends GetView<ItemDetailController> {
   const ItemDetailView({super.key});
 
-  // 1. Tambahkan widget helper ini (sama seperti di Card)
   Widget _buildImagePlaceholder() {
     return Container(
       height: 300,
@@ -24,8 +23,6 @@ class ItemDetailView extends GetView<ItemDetailController> {
 
   @override
   Widget build(BuildContext context) {
-    // Obx diperlukan di sini agar Obx di bottomNavigationBar
-    // bisa mendeteksi controller dengan benar
     return Obx(
       () => Scaffold(
         appBar: AppBar(title: Text(controller.report.value.itemName)),
@@ -33,7 +30,6 @@ class ItemDetailView extends GetView<ItemDetailController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 2. PERBAIKI BLOK GAMBAR INI
               (controller.report.value.imageUrl != null &&
                       controller.report.value.imageUrl!.isNotEmpty)
                   ? CachedNetworkImage(
@@ -50,8 +46,7 @@ class ItemDetailView extends GetView<ItemDetailController> {
                       errorWidget: (context, url, error) =>
                           _buildImagePlaceholder(),
                     )
-                  : _buildImagePlaceholder(), // Tampilkan jika null
-              // Detail
+                  : _buildImagePlaceholder(),
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -62,11 +57,9 @@ class ItemDetailView extends GetView<ItemDetailController> {
                       style: Get.textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 16),
-                    // 3. PERBAIKI PANGGILAN KATEGORI INI
                     _buildDetailRow(
                       Icons.category_outlined,
                       "Kategori",
-                      // Ubah dari .category menjadi .category?.name
                       controller.report.value.category?.name ??
                           "Tidak Ada Kategori",
                     ),
@@ -82,7 +75,6 @@ class ItemDetailView extends GetView<ItemDetailController> {
                       controller.report.value.reportType == 'hilang'
                           ? "Tanggal Hilang"
                           : "Tanggal Ditemukan",
-                      // Format tanggal sudah benar (menghasilkan String)
                       DateFormat(
                         'd MMMM yyyy, HH:mm',
                       ).format(controller.report.value.date),
@@ -100,12 +92,21 @@ class ItemDetailView extends GetView<ItemDetailController> {
             ],
           ),
         ),
-        // Tombol Aksi mengambang di bawah
-        // bottomNavigationBar: Padding(
-        //   padding: const EdgeInsets.all(20),
-        //   // Obx untuk menampilkan tombol berdasarkan kondisi
-        //   child: Obx(() => controller.buildActionButton()),
-        // ),
+        // --- BAGIAN TOMBOL DIAKTIFKAN DI SINI ---
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Obx(() => controller.buildActionButton()),
+        ),
       ),
     );
   }
@@ -119,7 +120,6 @@ class ItemDetailView extends GetView<ItemDetailController> {
           Icon(icon, color: AppTheme.primaryColor, size: 20),
           const SizedBox(width: 16),
           Expanded(
-            // 4. Tambahkan Expanded agar teks tidak overflow
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

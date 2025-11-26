@@ -181,23 +181,6 @@ class AddReportView extends GetView<AddReportController> {
                       : const Text("Submit Laporan"),
                 ),
               ),
-
-              const SizedBox(height: 12),
-              Obx(
-                () => controller.isEditMode.value
-                    ? ElevatedButton.icon(
-                        onPressed: controller.isLoading.value
-                            ? null
-                            : () => controller.deleteReport(),
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text("Hapus Laporan"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
             ],
           ),
         ),

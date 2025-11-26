@@ -13,7 +13,7 @@ class ItemDetailController extends GetxController {
   final ApiProvider apiProvider = Get.find<ApiProvider>();
   final GetStorage storage = GetStorage();
 
-  final Rx<Report> report = (Get.arguments as Report).obs;
+  late final Rx<Report> report;
   final RxInt myUserId = 0.obs;
 
   var isClaiming = false.obs;
@@ -22,6 +22,13 @@ class ItemDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // Validasi data saat masuk
+    if (Get.arguments is Report) {
+      report = (Get.arguments as Report).obs;
+    } else {
+      Get.back();
+      Get.snackbar("Error", "Data laporan invalid");
+    }
     loadMyUserId();
   }
 
@@ -33,9 +40,11 @@ class ItemDetailController extends GetxController {
     }
   }
 
+  // --- BAGIAN TOMBOL ---
   Widget buildActionButton() {
     if (myUserId.value == 0) return const SizedBox.shrink();
 
+    // JIKA PEMILIK: Tampilkan Edit & Hapus
     if (report.value.userId == myUserId.value) {
       return Row(
         children: [
@@ -71,6 +80,7 @@ class ItemDetailController extends GetxController {
       );
     }
 
+    // JIKA ORANG LAIN: Tampilkan Klaim
     if (report.value.reportType == 'ditemukan' &&
         report.value.status == 'open') {
       return SizedBox(
@@ -97,6 +107,7 @@ class ItemDetailController extends GetxController {
     Get.toNamed(Routes.ADD_REPORT, arguments: report.value);
   }
 
+  // --- LOGIKA HAPUS YANG DIPERBAIKI ---
   void onDeletePressed() {
     Get.defaultDialog(
       title: "Konfirmasi Hapus",
@@ -109,8 +120,8 @@ class ItemDetailController extends GetxController {
         // 1. TUTUP DIALOG KONFIRMASI DULUAN
         Get.back();
 
-        // 2. Mulai Loading di tombol
-        isDeleting(false);
+        // 2. Mulai Loading (HARUS TRUE AGAR SPINNER MUNCUL)
+        isDeleting(true);
 
         // 3. Panggil API
         bool success = await apiProvider.deleteReport(report.value.id);
@@ -119,13 +130,27 @@ class ItemDetailController extends GetxController {
         isDeleting(false);
 
         if (success) {
-          // 5. JIKA SUKSES -> Langsung Tutup Halaman Detail
-          // Kita gunakan Navigator.pop untuk lebih aman menutup halaman
-          // daripada Get.back() yang kadang menutup snackbar
-          Get.back();
+          // --- LOGIKA REDIRECT KE HOME ---
 
-          // 6. Refresh data di background
-          _refreshDataInBackground();
+          // Cek apakah HomeController ada di memori
+          if (Get.isRegistered<HomeController>()) {
+            // Refresh data di Home
+            Get.find<HomeController>().fetchReports();
+
+            // Redirect PAKSA ke Home (menutup halaman Detail dan mereset route)
+            Get.offNamed(Routes.HOME);
+          } else {
+            // Jika tidak ada Home, cukup tutup halaman ini
+            Get.back();
+          }
+
+          // Tampilkan pesan sukses dari sini (karena di provider sudah dihapus)
+          Get.snackbar(
+            "Sukses",
+            "Laporan berhasil dihapus",
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
         }
       },
     );
