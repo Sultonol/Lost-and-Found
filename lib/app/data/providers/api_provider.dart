@@ -3,7 +3,8 @@ import 'package:get_storage/get_storage.dart';
 import 'package:lost_and_found/app/data/api_constants.dart';
 import 'package:lost_and_found/app/data/models/report_model.dart';
 import 'package:lost_and_found/app/data/models/category_model.dart';
-import 'package:lost_and_found/app/data/models/claim_model.dart'; // IMPORT PENTING
+import 'package:lost_and_found/app/data/models/claim_model.dart';
+import 'package:lost_and_found/app/data/models/message_model.dart';
 import 'package:flutter/material.dart';
 
 class ApiProvider extends GetConnect {
@@ -314,6 +315,52 @@ class ApiProvider extends GetConnect {
         colorText: Colors.white,
       );
       return false;
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // 9. AMBIL CHAT (GET MESSAGES) - BARU
+  // -----------------------------------------------------------------
+  Future<List<Message>> getMessages(int claimId) async {
+    try {
+      final response = await get('${ApiConstants.claims}/$claimId/messages');
+      if (response.isOk) {
+        // Laravel mereturn { "data": [...] }
+        final List<dynamic> data = response.body['data'];
+        return Message.fromJsonList(data);
+      }
+      return [];
+    } catch (e) {
+      print("Error getMessages: $e");
+      return [];
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // 10. KIRIM PESAN (SEND MESSAGE) - BARU
+  // -----------------------------------------------------------------
+  Future<bool> sendMessage(int claimId, String messageContent) async {
+    try {
+      final response = await post('${ApiConstants.claims}/$claimId/messages', {
+        'message': messageContent, // Key 'message' sesuai validasi Laravel kamu
+      });
+      return response.isOk;
+    } catch (e) {
+      print("Error sendMessage: $e");
+      return false;
+    }
+  }
+
+  Future<List<Claim>> getMySubmittedClaims() async {
+    try {
+      final response = await get('${ApiConstants.claims}/my-submitted');
+      if (response.isOk) {
+        final List<dynamic> data = response.body['data'];
+        return Claim.fromJsonList(data);
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 }

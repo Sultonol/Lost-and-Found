@@ -1,91 +1,146 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lost_and_found/app/modules/profile/profile_controller.dart';
-import 'package:lost_and_found/app/routes/app_pages.dart';
-import 'package:lost_and_found/app/theme/app_theme.dart';
+import 'package:lost_and_found/app/modules/my_claims/my_claims_view.dart';
 
-class ProfileView extends GetView<ProfileController> {
+class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Inject Controller
+    final controller = Get.put(ProfileController());
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil Saya')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 24),
-        child: Column(
-          children: [
-            // Info User
-            const CircleAvatar(
-              radius: 50,
-              backgroundColor: AppTheme.accentColor,
-              child: Icon(Icons.person_rounded, size: 50, color: Colors.white),
-            ),
-            const SizedBox(height: 16),
-            Obx(
-              () => Text(
-                controller.userName.value,
-                style: Get.textTheme.headlineSmall,
-              ),
-            ),
-            Obx(
-              () => Text(
-                controller.userEmail.value,
-                style: Get.textTheme.bodyLarge?.copyWith(
-                  color: Colors.grey[600],
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("Profil Saya"),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: Obx(() {
+        final user = controller.currentUser.value;
+
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 30),
+
+              // --- 1. FOTO PROFIL & NAMA ---
+              Center(
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.blue[100],
+                      // Jika ada avatarUrl tampilkan gambar, jika tidak tampilkan inisial
+                      backgroundImage:
+                          (user?.avatarUrl != null &&
+                              user!.avatarUrl!.isNotEmpty)
+                          ? NetworkImage(user!.avatarUrl!)
+                          : null,
+                      child:
+                          (user?.avatarUrl == null || user!.avatarUrl!.isEmpty)
+                          ? Text(
+                              (user?.name ?? "U")[0].toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      user?.name ?? "Pengguna",
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      user?.email ?? "-",
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
 
-            // Menu
-            _buildProfileMenu(
-              Icons.list_alt_rounded,
-              "Laporan Saya",
-              () => Get.toNamed(Routes.MY_REPORTS),
-            ),
-            _buildProfileMenu(
-              Icons.playlist_add_check_circle_outlined,
-              "Proses Klaim Saya",
-              () => Get.toNamed(Routes.MY_CLAIMS),
-            ),
-            _buildProfileMenu(Icons.settings_outlined, "Pengaturan Akun", () {
-              /* TODO */
-            }),
-            const Divider(height: 32, indent: 20, endIndent: 20),
+              const SizedBox(height: 30),
+              const Divider(thickness: 1),
 
-            // Logout
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => controller.logout(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade50,
-                    foregroundColor: Colors.red.shade700,
-                    elevation: 0,
+              // --- 2. MENU OPTIONS ---
+
+              // Opsi A: Edit Profil (Hanya placeholder visual)
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text("Logout"),
+                  child: const Icon(Icons.person, color: Colors.blue),
                 ),
+                title: const Text("Edit Profil"),
+                trailing: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+                onTap: () {
+                  Get.snackbar("Info", "Fitur Edit Profil akan segera hadir");
+                },
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildProfileMenu(IconData icon, String title, VoidCallback onTap) {
-    return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(
-        title,
-        style: Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
-      ),
-      trailing: const Icon(Icons.chevron_right_rounded),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              // Opsi B: STATUS KLAIM SAYA (INI JAWABAN PERTANYAANMU)
+              // Di sini tempat Claimer mengecek status dan chat Finder
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.history_edu, color: Colors.orange),
+                ),
+                title: const Text("Status Klaim Saya"),
+                subtitle: const Text("Cek klaim yang Anda ajukan"),
+                trailing: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+                onTap: () {
+                  // Navigasi ke halaman MyClaimsView
+                  Get.to(() => const MyClaimsView());
+                },
+              ),
+
+              // Opsi C: Laporan Saya (Barang yang saya posting) - Opsional
+              // Jika kamu punya fitur "MyReports", bisa ditaruh sini juga.
+              const Divider(),
+
+              // Opsi D: LOGOUT
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.logout, color: Colors.red),
+                ),
+                title: const Text(
+                  "Keluar",
+                  style: TextStyle(color: Colors.red),
+                ),
+                onTap: () => controller.logout(),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }

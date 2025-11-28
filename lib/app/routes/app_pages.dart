@@ -7,17 +7,14 @@ import 'package:lost_and_found/app/modules/auth/register/register_binding.dart';
 import 'package:lost_and_found/app/modules/auth/register/register_view.dart';
 import 'package:lost_and_found/app/modules/auth/splash/splash_binding.dart';
 import 'package:lost_and_found/app/modules/auth/splash/splash_view.dart';
-import 'package:lost_and_found/app/modules/chat/chat_binding.dart';
 import 'package:lost_and_found/app/modules/chat/chat_view.dart';
 import 'package:lost_and_found/app/modules/home/home_binding.dart';
 import 'package:lost_and_found/app/modules/home/home_view.dart';
 import 'package:lost_and_found/app/modules/item_detail/item_detail_binding.dart';
 import 'package:lost_and_found/app/modules/item_detail/item_detail_view.dart';
-import 'package:lost_and_found/app/modules/my_claims/my_claims_binding.dart';
 import 'package:lost_and_found/app/modules/my_claims/my_claims_view.dart';
 import 'package:lost_and_found/app/modules/my_reports/my_reports_binding.dart';
 import 'package:lost_and_found/app/modules/my_reports/my_reports_view.dart';
-import 'package:lost_and_found/app/modules/profile/profile_binding.dart';
 import 'package:lost_and_found/app/modules/profile/profile_view.dart';
 
 part 'app_routes.dart';
@@ -63,16 +60,8 @@ class AppPages {
     //   page: () => const MyClaimsView(),
     //   binding: MyClaimsBinding(),
     // ),
-    // GetPage(
-    //   name: _Paths.CHAT,
-    //   page: () => const ChatView(),
-    //   binding: ChatBinding(),
-    // ),
-    GetPage(
-      name: _Paths.PROFILE,
-      page: () => const ProfileView(),
-      binding: ProfileBinding(),
-    ),
+    GetPage(name: _Paths.CHAT, page: () => const ChatView()),
+    GetPage(name: _Paths.PROFILE, page: () => const ProfileView()),
     GetPage(
       name: _Paths.MY_REPORTS,
       page: () => const MyReportsView(),
