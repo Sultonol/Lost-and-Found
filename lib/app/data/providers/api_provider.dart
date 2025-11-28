@@ -3,6 +3,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:lost_and_found/app/data/api_constants.dart';
 import 'package:lost_and_found/app/data/models/report_model.dart';
 import 'package:lost_and_found/app/data/models/category_model.dart';
+import 'package:lost_and_found/app/data/models/claim_model.dart'; // IMPORT PENTING
 import 'package:flutter/material.dart';
 
 class ApiProvider extends GetConnect {
@@ -45,7 +46,6 @@ class ApiProvider extends GetConnect {
         final List<dynamic> data = response.body['data'] as List<dynamic>;
         return Report.fromJsonList(data);
       } else {
-        // Error tetap ditampilkan agar tau jika gagal load data
         Get.snackbar(
           "Error API",
           "Gagal mengambil data: ${response.statusText ?? 'Error'}",
@@ -68,14 +68,13 @@ class ApiProvider extends GetConnect {
   }
 
   // -----------------------------------------------------------------
-  // 2. FUNGSI CREATE CLAIM
+  // 2. FUNGSI CREATE CLAIM (Mengajukan Klaim)
   // -----------------------------------------------------------------
   Future<bool> createClaim(int itemId) async {
     try {
       final response = await post(ApiConstants.claims, {'item_id': itemId});
 
       if (response.isOk) {
-        // SUKSES: Return true saja, jangan munculkan snackbar (biar controller yang handle)
         return true;
       } else {
         Get.snackbar(
@@ -140,10 +139,8 @@ class ApiProvider extends GetConnect {
       final response = await post(ApiConstants.items, formData);
 
       if (response.isOk) {
-        // SUKSES: Return true saja, jangan munculkan snackbar (biar controller yang handle)
         return true;
       } else {
-        // Error handling logic
         String errorMsg = "Gagal membuat laporan: ${response.statusText}";
         if (response.statusCode == 422 &&
             response.body != null &&
@@ -180,23 +177,17 @@ class ApiProvider extends GetConnect {
   }
 
   // -----------------------------------------------------------------
-  // 5. FUNGSI UPDATE REPORT (DIPERBAIKI UNTUK LARAVEL)
+  // 5. FUNGSI UPDATE REPORT
   // -----------------------------------------------------------------
   Future<bool> updateReport(int id, FormData formData) async {
     try {
-      // PERBAIKAN PENTING:
-      // Tambahkan method spoofing agar Laravel membaca ini sebagai PUT
-      // meskipun dikirim lewat POST (karena FormData/Gambar tidak bisa lewat PUT langsung)
       formData.fields.add(const MapEntry('_method', 'PUT'));
 
-      // Gunakan POST, bukan PUT
       final response = await post('${ApiConstants.items}/$id', formData);
 
       if (response.isOk) {
-        // SUKSES: Return true saja, jangan munculkan snackbar (biar controller yang handle)
         return true;
       } else {
-        // Error handling logic
         String errorMsg = "Gagal memperbarui laporan: ${response.statusText}";
         if (response.statusCode == 422 &&
             response.body != null &&
@@ -240,7 +231,6 @@ class ApiProvider extends GetConnect {
       final response = await delete('${ApiConstants.items}/$id');
 
       if (response.isOk) {
-        // SUKSES: Return true saja, jangan munculkan snackbar (biar controller yang handle)
         return true;
       } else {
         Get.snackbar(
@@ -260,6 +250,68 @@ class ApiProvider extends GetConnect {
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+  }
+
+  // =================================================================
+  // METHOD BARU UNTUK NOTIFIKASI & APPROVAL
+  // =================================================================
+
+  // -----------------------------------------------------------------
+  // 7. AMBIL LIST NOTIFIKASI KLAIM MASUK
+  // -----------------------------------------------------------------
+  Future<List<Claim>> getIncomingClaims() async {
+    try {
+      final response = await get('${ApiConstants.claims}/incoming');
+
+      // Debugging Log
+      print("=== CEK JSON DARI LARAVEL ===");
+      print("URL: ${ApiConstants.claims}/incoming");
+      print("Status Code: ${response.statusCode}");
+      print("Raw Body: ${response.bodyString}");
+      print("=============================");
+
+      if (response.isOk) {
+        final List<dynamic> data = response.body['data'];
+        return Claim.fromJsonList(data);
+      }
+      return [];
+    } catch (e) {
+      print("Error getIncomingClaims: $e");
+      return [];
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // 8. RESPON KLAIM (APPROVE / REJECT) - [INI YANG DITAMBAHKAN]
+  // -----------------------------------------------------------------
+  Future<bool> respondToClaim(int claimId, String status) async {
+    // status: 'approved' atau 'rejected'
+    try {
+      // Gunakan PUT untuk update status di endpoint /claims/{id}
+      final response = await put('${ApiConstants.claims}/$claimId', {
+        'status': status,
+      });
+
+      if (response.isOk) {
+        return true;
+      } else {
+        Get.snackbar(
+          "Gagal",
+          response.body['message'] ?? "Gagal memproses klaim",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return false;
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Kesalahan koneksi: $e",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
       return false;
     }

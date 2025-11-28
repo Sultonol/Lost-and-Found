@@ -42,6 +42,12 @@ class User {
   String email;
   DateTime? emailVerifiedAt;
   String role;
+
+  // --- FIELD BARU (DITAMBAHKAN UNTUK NOTIFIKASI) ---
+  String? avatarUrl;
+  String? phoneNumber;
+  // ------------------------------------------------
+
   DateTime createdAt;
   DateTime updatedAt;
 
@@ -51,6 +57,12 @@ class User {
     required this.email,
     this.emailVerifiedAt,
     required this.role,
+
+    // --- TAMBAHKAN DI CONSTRUCTOR ---
+    this.avatarUrl,
+    this.phoneNumber,
+
+    // --------------------------------
     required this.createdAt,
     required this.updatedAt,
   });
@@ -63,6 +75,10 @@ class User {
         ? null
         : DateTime.parse(json["email_verified_at"]),
     role: json["role"],
+    avatarUrl: json["avatar_url"],
+    phoneNumber: json["phone_number"],
+
+    // ----------------------------------
     createdAt: DateTime.parse(json["created_at"]),
     updatedAt: DateTime.parse(json["updated_at"]),
   );
@@ -73,6 +89,12 @@ class User {
     "email": email,
     "email_verified_at": emailVerifiedAt?.toIso8601String(),
     "role": role,
+
+    // --- MAPPING FIELD BARU KE JSON ---
+    "avatar_url": avatarUrl,
+    "phone_number": phoneNumber,
+
+    // ----------------------------------
     "created_at": createdAt.toIso8601String(),
     "updated_at": updatedAt.toIso8601String(),
   };

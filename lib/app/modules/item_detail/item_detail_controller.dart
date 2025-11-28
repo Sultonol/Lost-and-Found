@@ -5,9 +5,8 @@ import 'package:lost_and_found/app/data/models/report_model.dart';
 import 'package:lost_and_found/app/data/models/user_model.dart';
 import 'package:lost_and_found/app/data/providers/api_provider.dart';
 import 'package:lost_and_found/app/modules/home/home_controller.dart';
-import 'package:lost_and_found/app/modules/my_reports/my_reports_controller.dart';
-import 'package:lost_and_found/app/theme/app_theme.dart';
 import 'package:lost_and_found/app/routes/app_pages.dart';
+import 'package:lost_and_found/app/theme/app_theme.dart';
 
 class ItemDetailController extends GetxController {
   final ApiProvider apiProvider = Get.find<ApiProvider>();
@@ -22,7 +21,6 @@ class ItemDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Validasi data saat masuk
     if (Get.arguments is Report) {
       report = (Get.arguments as Report).obs;
     } else {
@@ -40,11 +38,11 @@ class ItemDetailController extends GetxController {
     }
   }
 
-  // --- BAGIAN TOMBOL ---
+  // --- WIDGET TOMBOL AKSI ---
   Widget buildActionButton() {
     if (myUserId.value == 0) return const SizedBox.shrink();
 
-    // JIKA PEMILIK: Tampilkan Edit & Hapus
+    // 1. JIKA PEMILIK: Tampilkan Edit & Hapus
     if (report.value.userId == myUserId.value) {
       return Row(
         children: [
@@ -80,7 +78,44 @@ class ItemDetailController extends GetxController {
       );
     }
 
-    // JIKA ORANG LAIN: Tampilkan Klaim
+    // 2. JIKA ORANG LAIN:
+    if (report.value.status == 'claimed') {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: Text(
+            "BARANG SEDANG DALAM PROSES KLAIM",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (report.value.status == 'closed') {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.green[100],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: Text(
+            "BARANG SUDAH DIKEMBALIKAN (SELESAI)",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+          ),
+        ),
+      );
+    }
+
     if (report.value.reportType == 'ditemukan' &&
         report.value.status == 'open') {
       return SizedBox(
@@ -100,6 +135,7 @@ class ItemDetailController extends GetxController {
         ),
       );
     }
+
     return const SizedBox.shrink();
   }
 
@@ -107,48 +143,90 @@ class ItemDetailController extends GetxController {
     Get.toNamed(Routes.ADD_REPORT, arguments: report.value);
   }
 
-  // --- LOGIKA HAPUS YANG DIPERBAIKI ---
   void onDeletePressed() {
     Get.defaultDialog(
-      title: "Konfirmasi Hapus",
-      middleText: "Anda yakin ingin menghapus laporan ini?",
-      textConfirm: "Ya, Hapus",
+      title: "Hapus Laporan",
+      middleText: "Yakin hapus?",
+      textConfirm: "Ya",
       textCancel: "Batal",
       confirmTextColor: Colors.white,
       buttonColor: Colors.red,
       onConfirm: () async {
-        // 1. TUTUP DIALOG KONFIRMASI DULUAN
+        Get.back();
+        isDeleting(true);
+        bool success = await apiProvider.deleteReport(report.value.id);
+        isDeleting(false);
+        if (success) {
+          _refreshDataInBackground();
+          Get.back(); // Tutup detail view
+        }
+      },
+    );
+  }
+
+  // =========================================================================
+  // LOGIKA KLAIM BARU (MIRIP SUBMIT REPORT)
+  // =========================================================================
+  void createClaim() {
+    Get.defaultDialog(
+      title: "Konfirmasi Klaim",
+      middleText: "Yakin ingin mengklaim barang ini? Penemu akan diberitahu.",
+      textConfirm: "Ya, Klaim",
+      textCancel: "Batal",
+      confirmTextColor: Colors.white,
+      buttonColor: AppTheme.primaryColor,
+      onConfirm: () async {
+        // 1. TUTUP DIALOG KONFIRMASI TERLEBIH DAHULU
         Get.back();
 
-        // 2. Mulai Loading (HARUS TRUE AGAR SPINNER MUNCUL)
-        isDeleting(true);
+        // 2. MULAI LOADING
+        isClaiming(true);
 
-        // 3. Panggil API
-        bool success = await apiProvider.deleteReport(report.value.id);
+        try {
+          // 3. PANGGIL API
+          bool success = await apiProvider.createClaim(report.value.id);
 
-        // 4. Matikan Loading
-        isDeleting(false);
+          // 4. MATIKAN LOADING
+          isClaiming(false);
 
-        if (success) {
-          // --- LOGIKA REDIRECT KE HOME ---
+          // 5. CEK HASIL
+          if (success) {
+            // Tampilkan Pesan Sukses
+            Get.snackbar(
+              "Berhasil",
+              "Permintaan klaim dikirim. Tunggu persetujuan penemu.",
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
+              duration: const Duration(seconds: 3),
+            );
 
-          // Cek apakah HomeController ada di memori
-          if (Get.isRegistered<HomeController>()) {
-            // Refresh data di Home
-            Get.find<HomeController>().fetchReports();
+            // 6. REDIRECT DAN REFRESH (LOGIKA PENTING)
+            if (Get.isRegistered<HomeController>()) {
+              final homeC = Get.find<HomeController>();
 
-            // Redirect PAKSA ke Home (menutup halaman Detail dan mereset route)
-            Get.offNamed(Routes.HOME);
-          } else {
-            // Jika tidak ada Home, cukup tutup halaman ini
-            Get.back();
+              // a. Refresh data di Home agar status terupdate
+              await homeC.fetchReports();
+
+              // b. Pindah ke tab 'Barang Ditemukan' (index 1) karena klaim biasanya di situ
+              if (homeC.tabController != null) {
+                homeC.tabController!.animateTo(1);
+              }
+
+              // c. PAKSA PINDAH KE HOME (Menutup halaman detail)
+              // Menggunakan Get.offNamed memastikan kita tidak 'stuck' di halaman detail
+              Get.offNamed(Routes.HOME);
+            } else {
+              // Fallback jika masuk dari deeplink atau tidak ada Home
+              Get.back();
+            }
           }
-
-          // Tampilkan pesan sukses dari sini (karena di provider sudah dihapus)
+        } catch (e) {
+          // Tangani Error dengan baik
+          isClaiming(false);
           Get.snackbar(
-            "Sukses",
-            "Laporan berhasil dihapus",
-            backgroundColor: Colors.green,
+            "Error",
+            "Terjadi kesalahan saat klaim: ${e.toString()}",
+            backgroundColor: Colors.red,
             colorText: Colors.white,
           );
         }
@@ -156,33 +234,9 @@ class ItemDetailController extends GetxController {
     );
   }
 
-  void createClaim() {
-    Get.defaultDialog(
-      title: "Konfirmasi Klaim",
-      middleText: "Yakin ingin mengklaim barang ini?",
-      textConfirm: "Ya, Klaim",
-      textCancel: "Batal",
-      confirmTextColor: Colors.white,
-      onConfirm: () async {
-        Get.back();
-        isClaiming(true);
-        bool success = await apiProvider.createClaim(report.value.id);
-        isClaiming(false);
-
-        if (success) {
-          Get.offNamed(Routes.MY_CLAIMS);
-          _refreshDataInBackground();
-        }
-      },
-    );
-  }
-
   void _refreshDataInBackground() {
-    try {
-      if (Get.isRegistered<HomeController>())
-        Get.find<HomeController>().fetchReports();
-      if (Get.isRegistered<MyReportsController>())
-        Get.find<MyReportsController>().fetchMyReports();
-    } catch (_) {}
+    if (Get.isRegistered<HomeController>()) {
+      Get.find<HomeController>().fetchReports();
+    }
   }
 }

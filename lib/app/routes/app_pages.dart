@@ -58,16 +58,16 @@ class AppPages {
       page: () => const ItemDetailView(),
       binding: ItemDetailBinding(),
     ),
-    GetPage(
-      name: _Paths.MY_CLAIMS,
-      page: () => const MyClaimsView(),
-      binding: MyClaimsBinding(),
-    ),
-    GetPage(
-      name: _Paths.CHAT,
-      page: () => const ChatView(),
-      binding: ChatBinding(),
-    ),
+    // GetPage(
+    //   name: _Paths.MY_CLAIMS,
+    //   page: () => const MyClaimsView(),
+    //   binding: MyClaimsBinding(),
+    // ),
+    // GetPage(
+    //   name: _Paths.CHAT,
+    //   page: () => const ChatView(),
+    //   binding: ChatBinding(),
+    // ),
     GetPage(
       name: _Paths.PROFILE,
       page: () => const ProfileView(),

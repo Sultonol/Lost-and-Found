@@ -9,6 +9,10 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   var isLoading = true.obs;
   var selectedTabIndex = 0.obs;
 
+  // --- 1. VARIABEL UNTUK MENYIMPAN JUMLAH NOTIFIKASI ---
+  // Ini yang menyebabkan error "notificationCount isn't defined" sebelumnya.
+  var notificationCount = 0.obs;
+
   final RxList<Report> lostItems = <Report>[].obs;
   final RxList<Report> foundItems = <Report>[].obs;
 
@@ -22,7 +26,12 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     _tabController.value!.addListener(() {
       selectedTabIndex.value = _tabController.value!.index;
     });
+
+    // Ambil data laporan
     fetchReports();
+
+    // --- 2. AMBIL JUMLAH NOTIFIKASI SAAT APLIKASI DIBUKA ---
+    fetchNotificationCount();
   }
 
   @override
@@ -42,6 +51,10 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
       lostItems.assignAll(responses[0]);
       foundItems.assignAll(responses[1]);
+
+      // --- 3. REFRESH JUGA NOTIFIKASI SETIAP KALI DATA DI-REFRESH ---
+      // Agar badge merah selalu update jika ada klaim baru
+      fetchNotificationCount();
     } catch (e) {
       print("[v0] Error fetching reports: ${e.toString()}");
       Get.snackbar(
@@ -60,6 +73,38 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
     int tabIndex = reportType == 'hilang' ? 0 : 1;
     if (_tabController.value != null) {
       _tabController.value!.animateTo(tabIndex);
+    }
+  }
+
+  // --- 4. FUNGSI UNTUK MENGAMBIL DATA KLAIM MASUK ---
+  void fetchNotificationCount() async {
+    try {
+      // Mengambil data klaim yang masuk (pending) dari API Provider
+      var claims = await apiProvider.getIncomingClaims();
+
+      // Update jumlah notifikasi sesuai panjang list data yang diterima
+      notificationCount.value = claims.length;
+    } catch (e) {
+      print("Gagal mengambil notifikasi: $e");
+    }
+  }
+
+  // --- 5. FUNGSI DELETE (Agar bisa dipanggil dari mana saja di Home) ---
+  Future<void> deleteReport(int id) async {
+    try {
+      bool success = await apiProvider.deleteReport(id);
+      if (success) {
+        // Refresh data setelah menghapus agar item hilang dari list
+        await fetchReports();
+        Get.snackbar(
+          "Sukses",
+          "Laporan berhasil dihapus",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar("Error", "Gagal menghapus: $e");
     }
   }
 }
