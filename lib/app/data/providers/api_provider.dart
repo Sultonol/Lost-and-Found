@@ -324,14 +324,27 @@ class ApiProvider extends GetConnect {
   Future<List<Message>> getMessages(int claimId) async {
     try {
       final response = await get('${ApiConstants.claims}/$claimId/messages');
+      print("=== DEBUG CHAT ===");
+      print("URL: ${ApiConstants.claims}/$claimId/messages");
+      print("STATUS: ${response.statusCode}");
+      print("==================");
+
       if (response.isOk) {
-        // Laravel mereturn { "data": [...] }
-        final List<dynamic> data = response.body['data'];
-        return Message.fromJsonList(data);
+        List<dynamic> listData = [];
+
+        if (response.body is Map && response.body['data'] != null) {
+          listData = response.body['data'];
+        } else if (response.body is List) {
+          listData = response.body;
+        }
+
+        return Message.fromJsonList(listData);
+      } else {
+        print("Gagal ambil chat: ${response.statusText}");
+        return [];
       }
-      return [];
     } catch (e) {
-      print("Error getMessages: $e");
+      print("Error getMessages (Exception): $e");
       return [];
     }
   }

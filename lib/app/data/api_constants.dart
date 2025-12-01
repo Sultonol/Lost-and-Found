@@ -1,7 +1,7 @@
 class ApiConstants {
   // Base URL tetap lengkap
   // static const String baseUrl = "http://192.168.1.82:8000/api";
-  static const String baseUrl = "http://10.0.98.151:8000/api";
+  static const String baseUrl = "http://10.90.33.35:8000/api";
 
   static const String login = "/login";
   static const String register = "/register";
