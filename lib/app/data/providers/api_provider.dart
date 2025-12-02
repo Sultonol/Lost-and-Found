@@ -376,4 +376,58 @@ class ApiProvider extends GetConnect {
       return [];
     }
   }
+
+  Future<Map<String, dynamic>?> updateProfile(FormData formData) async {
+    try {
+      final response = await post(
+        '${ApiConstants.baseUrl}/profile/update',
+        formData,
+      );
+
+      // --- DEBUG LOG ---
+      print("=== DEBUG UPDATE PROFILE ===");
+      print("Status Code: ${response.statusCode}");
+      print(
+        "Body Type: ${response.body.runtimeType}",
+      ); // Cek apakah String atau Map?
+
+      if (response.isOk) {
+        // Cek apakah responnya benar-benar JSON Map?
+        if (response.body is Map) {
+          return response.body['user'];
+        } else {
+          // Jika server mengirim HTML (String), print isinya agar ketahuan errornya
+          print("SERVER ERROR (HTML):");
+          print(response.body);
+          Get.snackbar(
+            "Server Error",
+            "Terjadi kesalahan di server (Cek Console)",
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+          return null;
+        }
+      } else {
+        // Jika Error 500 (Internal Server Error)
+        print("GAGAL REQUEST: ${response.statusText}");
+        print("ISI ERROR: ${response.bodyString}");
+
+        Get.snackbar(
+          "Gagal",
+          "Error: ${response.statusCode} - ${response.statusText}",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return null;
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Koneksi bermasalah: $e",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return null;
+    }
+  }
 }

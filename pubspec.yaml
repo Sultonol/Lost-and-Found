@@ -15,6 +15,7 @@ dependencies:
   # Dependensi Inti
   get: ^4.6.6               # Untuk State Management, Dependency Injection, dan Routing
   get_storage: ^2.1.1       # Untuk menyimpan token login (penyimpanan lokal)
+  tutorial_coach_mark: ^1.2.10
   
   # UI & Utility
   google_fonts: ^6.1.0      # Untuk font yang lebih menarik

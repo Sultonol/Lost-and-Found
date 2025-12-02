@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:lost_and_found/app/data/api_constants.dart';
 import 'package:lost_and_found/app/data/models/report_model.dart';
 import 'package:lost_and_found/app/routes/app_pages.dart';
 
@@ -9,22 +10,28 @@ class ReportItemCard extends StatelessWidget {
   final Report report;
   const ReportItemCard({super.key, required this.report});
 
-  // Helper untuk warna status
+  // --- LOGIKA WARNA (REVISI AESTHETIC) ---
   Color _getStatusColor(String status) {
-    if (status == 'claimed' || status == 'resolved') {
-      return Colors.green;
-    } else if (status == 'pending') {
-      return Colors.orange;
+    if (status == 'closed') {
+      return Colors.red[800]!; // Merah Bata (Closed)
+    } else if (status == 'claimed') {
+      // GANTI JADI TEAL (Hijau Kebiruan)
+      // Ini lebih "masuk" dengan tema biru daripada oranye/kuning
+      return Colors.teal[700]!;
+    } else if (status == 'resolved') {
+      return Colors.grey[700]!;
     }
-    return Colors.blue; // open
+    return Colors.blue[700]!; // Biru (Tersedia)
   }
 
-  // Helper untuk teks status
+  // --- LOGIKA TEKS ---
   String _getStatusText(String status) {
-    if (status == 'claimed' || status == 'resolved') {
-      return "Sudah Diklaim";
-    } else if (status == 'pending') {
-      return "Menunggu Konfirmasi";
+    if (status == 'closed') {
+      return "Closed";
+    } else if (status == 'claimed') {
+      return "Claimed";
+    } else if (status == 'resolved') {
+      return "Resolved";
     }
     return "Tersedia";
   }
@@ -50,8 +57,36 @@ class ReportItemCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
+        // --- LOGIKA KLIK & NOTIFIKASI ---
         onTap: () {
-          Get.toNamed(Routes.ITEM_DETAIL, arguments: report);
+          if (report.status == 'closed') {
+            Get.snackbar(
+              "Laporan Ditutup",
+              "Barang ini sudah selesai dan tidak tersedia lagi.",
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: _getStatusColor('closed'),
+              colorText: Colors.white,
+              margin: const EdgeInsets.all(15),
+              borderRadius: 10,
+              icon: const Icon(Icons.lock_outline, color: Colors.white),
+              duration: const Duration(seconds: 2),
+            );
+          } else if (report.status == 'claimed') {
+            Get.snackbar(
+              "Proses Klaim",
+              "Barang ini sedang dalam proses pengambilan/verifikasi.",
+              snackPosition: SnackPosition.TOP,
+              // Gunakan warna statusnya (Teal) agar konsisten
+              backgroundColor: _getStatusColor('claimed'),
+              colorText: Colors.white,
+              margin: const EdgeInsets.all(15),
+              borderRadius: 10,
+              icon: const Icon(Icons.history_edu, color: Colors.white),
+              duration: const Duration(seconds: 2),
+            );
+          } else {
+            Get.toNamed(Routes.ITEM_DETAIL, arguments: report);
+          }
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,7 +96,7 @@ class ReportItemCard extends StatelessWidget {
               children: [
                 (report.imageUrl != null && report.imageUrl!.isNotEmpty)
                     ? CachedNetworkImage(
-                        imageUrl: report.imageUrl!,
+                        imageUrl: ApiConstants.fixImageUrl(report.imageUrl),
                         height: 180,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -77,7 +112,7 @@ class ReportItemCard extends StatelessWidget {
                       )
                     : _buildImagePlaceholder(),
 
-                // --- BADGE STATUS (BARU) ---
+                // --- BADGE STATUS ---
                 Positioned(
                   top: 10,
                   right: 10,
@@ -87,8 +122,16 @@ class ReportItemCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(report.status).withOpacity(0.9),
+                      // Opacity 0.95 agar sedikit transparan tapi teks tetap jelas
+                      color: _getStatusColor(report.status).withOpacity(0.95),
                       borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Text(
                       _getStatusText(report.status),
@@ -96,6 +139,7 @@ class ReportItemCard extends StatelessWidget {
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
@@ -111,7 +155,9 @@ class ReportItemCard extends StatelessWidget {
                 children: [
                   Text(
                     report.itemName,
-                    style: Get.textTheme.titleMedium,
+                    style: Get.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -119,16 +165,16 @@ class ReportItemCard extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        Icons.location_on_outlined,
+                        Icons.location_on,
                         size: 16,
                         color: Colors.grey[600],
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           report.category?.name ?? report.location,
                           style: Get.textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                            color: Colors.grey[700],
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -136,19 +182,19 @@ class ReportItemCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Icon(
-                        Icons.calendar_today_outlined,
+                        Icons.access_time_filled,
                         size: 16,
                         color: Colors.grey[600],
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Text(
-                        DateFormat('d MMMM yyyy').format(report.date),
+                        DateFormat('d MMM yyyy').format(report.date),
                         style: Get.textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
+                          color: Colors.grey[700],
                         ),
                       ),
                     ],

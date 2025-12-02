@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:lost_and_found/app/modules/home/home_controller.dart';
 import 'package:lost_and_found/app/modules/home/widgets/hilang_tab_view.dart';
 import 'package:lost_and_found/app/modules/home/widgets/ditemukan_tab_view.dart';
-import 'package:lost_and_found/app/modules/notifications/notifications_view.dart'; // Pastikan path ini benar
+import 'package:lost_and_found/app/modules/notifications/notifications_view.dart';
 import 'package:lost_and_found/app/routes/app_pages.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -12,7 +12,6 @@ class HomeView extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      // Jika controller belum ready, tampilkan loading
       if (!controller.isLoading.value && controller.tabController == null) {
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       }
@@ -21,17 +20,16 @@ class HomeView extends GetView<HomeController> {
         appBar: AppBar(
           title: const Text('Lost & Found'),
           actions: [
-            // --- 1. ICON NOTIFIKASI DENGAN BADGE MERAH ---
+            // --- 1. KEY NOTIFIKASI DIPASANG DI SINI ---
             Stack(
+              key: controller.notifKey, // <--- Key Notifikasi
               children: [
                 IconButton(
                   icon: const Icon(Icons.notifications_outlined),
                   onPressed: () {
-                    // Navigasi ke halaman Notifikasi
                     Get.to(() => const NotificationsView());
                   },
                 ),
-                // Tampilkan badge merah hanya jika ada notifikasi (> 0)
                 if (controller.notificationCount.value > 0)
                   Positioned(
                     right: 8,
@@ -68,6 +66,8 @@ class HomeView extends GetView<HomeController> {
           ],
           bottom: controller.tabController != null
               ? TabBar(
+                  // --- 3. KEY TAB BAR DIPASANG DI SINI ---
+                  key: controller.tabKey, // <--- Key Tab Bar
                   controller: controller.tabController,
                   tabs: const [
                     Tab(text: 'Barang Hilang'),
@@ -82,7 +82,10 @@ class HomeView extends GetView<HomeController> {
                 children: const [HilangTabView(), DitemukanTabView()],
               )
             : const Center(child: CircularProgressIndicator()),
+
         floatingActionButton: FloatingActionButton(
+          // --- 4. KEY FAB DIPASANG DI SINI ---
+          key: controller.fabKey, // <--- Key Tombol Tambah
           onPressed: () => Get.toNamed(Routes.ADD_REPORT),
           child: const Icon(Icons.add_rounded),
         ),

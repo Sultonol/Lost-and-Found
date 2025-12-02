@@ -89,7 +89,7 @@ class ProfileView extends StatelessWidget {
                   color: Colors.grey,
                 ),
                 onTap: () {
-                  Get.snackbar("Info", "Fitur Edit Profil akan segera hadir");
+                  Get.snackbar("Info", "In Development mode");
                 },
               ),
 
