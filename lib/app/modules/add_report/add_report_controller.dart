@@ -13,7 +13,8 @@ class AddReportController extends GetxController {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   final ApiProvider apiProvider = Get.find<ApiProvider>();
-  // Gunakan try-catch saat mencari HomeController untuk mencegah crash jika testing terisolasi
+
+  // Helper untuk akses HomeController
   HomeController? get homeController {
     try {
       return Get.find<HomeController>();
@@ -148,6 +149,10 @@ class AddReportController extends GetxController {
   }
 
   void submitReport() async {
+    // 0. TUTUP KEYBOARD SECARA PAKSA
+    // Ini perbaikan PENTING. Jika keyboard masih kebuka, Get.back() hanya menutup keyboard, bukan halaman.
+    FocusManager.instance.primaryFocus?.unfocus();
+
     // 1. Validasi Input
     if (!formKey.currentState!.validate()) {
       Get.snackbar(
@@ -214,23 +219,29 @@ class AddReportController extends GetxController {
       isLoading(false);
 
       if (success) {
+        // --- LOGIKA SUKSES BARU ---
+
+        // 1. Refresh Home di background (JANGAN DI-AWAIT)
+        // Kita biarkan refresh berjalan sendiri tanpa menahan UI
+        if (homeController != null) {
+          homeController!.refreshAndSetTab(reportType.value);
+        }
+
+        // 2. Langsung Kembali ke Home
+        Get.back();
+
+        // 3. Tampilkan Notif Sukses SETELAH pindah halaman
+        // Notif ini akan muncul di atas halaman Home
         Get.snackbar(
           "Sukses",
           "${isEditMode.value ? 'Laporan diperbarui' : 'Laporan berhasil dibuat'}!",
           backgroundColor: Colors.green,
           colorText: Colors.white,
+          snackPosition: SnackPosition.TOP, // Lebih terlihat di atas
+          margin: const EdgeInsets.all(10),
+          borderRadius: 10,
         );
-
-        if (homeController != null) {
-          // Refresh data terlebih dahulu
-          await homeController!.refreshAndSetTab(reportType.value);
-          // Tutup halaman add report dan kembali ke Home
-          Get.offNamed(Routes.HOME);
-        } else {
-          Get.back();
-        }
       }
-      // Jika gagal, user tetap di halaman ini untuk memperbaiki data
     } catch (e) {
       isLoading(false);
       Get.snackbar(

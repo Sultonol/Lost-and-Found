@@ -1,14 +1,10 @@
 class ApiConstants {
-  // Base URL tetap lengkap
-  // static const String baseUrl = "http://192.168.1.82:8000/api";
-  static const String baseUrl = "http://192.168.1.71:8000/api";
+  static const String baseUrl = "http://192.168.1.239:8000/api";
   static String fixImageUrl(String? originalUrl) {
     if (originalUrl == null || originalUrl.isEmpty) {
       return "";
     }
-    // Jika URL mengandung IP lama (22), paksa ganti ke IP baru (71)
-    // Sesuaikan IP ini dengan IP laptopmu yang sekarang
-    return originalUrl.replaceAll('192.168.1.22', '192.168.1.71');
+    return originalUrl.replaceAll('192.168.1.22', '192.168.1.239');
   }
 
   static const String login = "/login";
