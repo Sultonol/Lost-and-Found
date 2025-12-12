@@ -20,7 +20,7 @@ class RegisterController extends GetxController {
   void onInit() {
     // Beri tahu GetConnect ini apa baseUrl-nya
     _connect.baseUrl = ApiConstants.baseUrl;
-    super.onInit();
+    _connect.timeout = const Duration(seconds: 30);
   }
   // --- AKHIR PERBAIKAN ---
 

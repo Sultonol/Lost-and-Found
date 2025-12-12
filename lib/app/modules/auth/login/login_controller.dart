@@ -19,7 +19,7 @@ class LoginController extends GetxController {
   @override
   void onInit() {
     _connect.baseUrl = ApiConstants.baseUrl;
-    super.onInit();
+    _connect.timeout = const Duration(seconds: 30);
   }
 
   @override

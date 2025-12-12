@@ -14,7 +14,6 @@ abstract class Routes {
   static const MY_REPORTS = _Paths.MY_REPORTS;
 }
 
-// Kelas abstrak untuk path rute
 abstract class _Paths {
   _Paths._();
   static const HOME = '/home';
